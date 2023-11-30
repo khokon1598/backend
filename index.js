@@ -17,7 +17,6 @@ app.use(cors());
 app.use(express.json());
 
 const verifyToken = (req, res, next) => {
-  console.log("inside verify token", req.headers.authorization);
   if (!req.headers.authorization) {
     return res.status(401).send({ message: "unauthorized access" });
   }
@@ -231,6 +230,23 @@ async function run() {
       };
       const result = await testCollection.find(query).toArray();
       res.send(result);
+    });
+
+    app.get("/userTests", async (req, res) => {
+      const currentDate = new Date();
+      currentDate.setHours(0, 0, 0, 0);
+      const query = {
+        availableDate: { $gte: currentDate.toISOString() },
+      };
+      const page = req.query.page || 1;
+      const pageSize = req.query.pageSize || 6;
+      const totalTest = await testCollection.countDocuments();
+      const result = await testCollection
+        .find(query)
+        .skip((page - 1) * parseFloat(pageSize))
+        .limit(parseFloat(pageSize))
+        .toArray();
+      res.send({ data: result, totalTest: totalTest });
     });
 
     app.get("/tests/:id", async (req, res) => {
